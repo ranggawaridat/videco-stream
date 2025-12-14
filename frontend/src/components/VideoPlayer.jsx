@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 // video.js will be loaded lazily when the player is initialized to reduce initial bundle size
 import api from '../api';
+import AdScripts from './AdScripts';
 
 function VideoPlayer() {
     const { id } = useParams();
@@ -38,7 +39,7 @@ function VideoPlayer() {
             try {
                 const head = await fetch(url, { method: 'HEAD' });
                 const ct = head.headers.get('content-type') || '';
-            // Note: HEAD may be blocked by CORS on some CDNs; we only use content-type heuristics here
+                // Note: HEAD may be blocked by CORS on some CDNs; we only use content-type heuristics here
 
                 if (ct.includes('mpegurl') || ct.includes('vnd.apple.mpegurl') || ct.includes('application/x-mpegurl')) {
                     return 'application/x-mpegURL';
@@ -112,7 +113,7 @@ function VideoPlayer() {
 
                 // If the source is HLS, try hls.js fallback using the underlying video element
                 if (type === 'application/x-mpegURL') {
-                        try {
+                    try {
                         // dispose video.js player first
                         try { player.current.dispose(); } catch (e) { console.debug(e); }
                         player.current = null;
@@ -166,6 +167,7 @@ function VideoPlayer() {
 
     return (
         <div className="max-w-5xl mx-auto mt-8 px-4">
+            <AdScripts />
             {/* Title */}
             <h1 className="text-3xl font-bold mb-4 text-[var(--text)]">{videoData.title}</h1>
 

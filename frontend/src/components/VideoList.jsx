@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
+import AdScripts from './AdScripts';
 
 function VideoList() {
     const [videos, setVideos] = useState([]);
@@ -23,6 +24,7 @@ function VideoList() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            <AdScripts />
             {videos.map(video => (
                 <Link to={`/watch/${video.id}`} key={video.id} className="block bg-[var(--surface)] rounded-lg overflow-hidden hover:shadow-lg transition border border-[var(--border)]">
                     <div className="aspect-video bg-black relative">
