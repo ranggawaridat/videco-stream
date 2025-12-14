@@ -17,8 +17,7 @@ class Settings(BaseSettings):
 
     # Security
     CORS_ORIGINS: list[str] = [
-        "https://front-end-production-fde8.up.railway.app",
-        "https://videco-stream.site",
+        "https://videco-stream.online",
         "http://localhost:3000", # Keep localhost for development
     ]
     DOCS_ENABLED: bool = False
