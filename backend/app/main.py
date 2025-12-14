@@ -60,4 +60,4 @@ async def add_security_headers(request, call_next):
 
 @app.get("/")
 def read_root():
-    return {"message": "Videc API is running"}
+    return {"message": "Videco API is running"}

@@ -7,8 +7,18 @@ function VideoList() {
 
     useEffect(() => {
         api.get('/videos/')
-            .then(res => setVideos(res.data))
-            .catch(err => console.error(err));
+            .then(res => {
+                if (Array.isArray(res.data)) {
+                    setVideos(res.data);
+                } else {
+                    console.error("API did not return a list:", res.data);
+                    setVideos([]);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                setVideos([]);
+            });
     }, []);
 
     return (
