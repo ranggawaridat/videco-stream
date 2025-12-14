@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
+from .config import settings
 from .routers import auth, videos
 import time
 from sqlalchemy.exc import OperationalError
@@ -21,7 +22,12 @@ def create_tables_with_retry(retries: int = 12, delay: float = 1.0):
 
 
 
-app = FastAPI(title="Videc Streaming API")
+app = FastAPI(
+    title="Videco Streaming API",
+    docs_url="/docs" if settings.DOCS_ENABLED else None,
+    redoc_url="/redoc" if settings.DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if settings.DOCS_ENABLED else None,
+)
 
 
 @app.on_event("startup")
@@ -32,7 +38,7 @@ def on_startup():
 # Allow all origins for simplicity (or configure specific domains in env)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

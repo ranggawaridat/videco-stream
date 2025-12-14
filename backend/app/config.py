@@ -15,6 +15,14 @@ class Settings(BaseSettings):
     BUNNY_PULL_ZONE: Optional[str] = None
     BUNNY_SECURITY_KEY: Optional[str] = None
 
+    # Security
+    CORS_ORIGINS: list[str] = [
+        "https://front-end-production-fde8.up.railway.app",
+        "https://videco-stream.site",
+        "http://localhost:3000", # Keep localhost for development
+    ]
+    DOCS_ENABLED: bool = False
+
     class Config:
         env_file = ".env"
 
