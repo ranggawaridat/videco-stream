@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+python-jose[cryptography]
+
+celery
+redis
+python-multipart
+# Database driver
+psycopg2-binary
+httpx
+pydantic-settings
+email-validator

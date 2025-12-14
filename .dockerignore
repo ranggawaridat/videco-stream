@@ -1,0 +1,29 @@
+# Version Control
+.git
+.gitignore
+
+# Environment
+.env
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node.js
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# IDEs
+.vscode/
+.idea/
+
+# Large/Unnecessary files
+*.md
+README.md
+postgres_data/

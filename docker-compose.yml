@@ -1,0 +1,86 @@
+services:
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: videc-backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/videc_db
+      - REDIS_URL=redis://redis:6379/0
+      - BUNNY_API_KEY=${BUNNY_API_KEY}
+      - BUNNY_STORAGE_ZONE=${BUNNY_STORAGE_ZONE}
+      - BUNNY_REGION=${BUNNY_REGION}
+      - BUNNY_PULL_ZONE=${BUNNY_PULL_ZONE}
+      - BUNNY_SECURITY_KEY=${BUNNY_SECURITY_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+
+  # Celery Worker
+  worker:
+    build: ./backend
+    container_name: videc-worker
+    command: celery -A app.celery_worker.celery_app worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/videc_db
+      - REDIS_URL=redis://redis:6379/0
+      - BUNNY_API_KEY=${BUNNY_API_KEY}
+      - BUNNY_STORAGE_ZONE=${BUNNY_STORAGE_ZONE}
+      - BUNNY_REGION=${BUNNY_REGION}
+      - BUNNY_PULL_ZONE=${BUNNY_PULL_ZONE}
+      - BUNNY_SECURITY_KEY=${BUNNY_SECURITY_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: videc-db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=videc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d videc_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Redis for Queue
+  redis:
+    image: redis:7-alpine
+    container_name: videc-redis
+    ports:
+      - "6379:6379"
+
+  # Frontend (Vite)
+  frontend:
+    build: ./frontend
+    container_name: videc-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=
+      - API_TARGET=http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
