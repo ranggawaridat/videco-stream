@@ -68,8 +68,8 @@ async def upload_video(
     ).order_by(models.Video.created_at.desc()).first()
 
     if last_video and last_video.created_at:
-        from datetime import datetime, timedelta
-        if datetime.utcnow() - last_video.created_at < timedelta(minutes=1):
+        from datetime import datetime, timedelta, timezone
+        if datetime.now(timezone.utc) - last_video.created_at < timedelta(minutes=1):
             raise HTTPException(status_code=429, detail="You are uploading too fast. Please wait a minute before uploading again.")
 
     # 3. Save file temporarily
