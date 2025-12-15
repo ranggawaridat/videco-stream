@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 function Upload() {
@@ -7,6 +8,14 @@ function Upload() {
     const [progress, setProgress] = useState(0);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        setIsLoggedIn(!!token);
+    }, []);
 
     const handleUpload = async (e) => {
         e.preventDefault();
@@ -33,15 +42,21 @@ function Upload() {
                     setProgress(percentCompleted);
                 }
             });
-            setMessage('Upload successful! Video is being processed in the background.');
+            setMessage('Upload successful! Your video is now available.');
             setFile(null);
             setProgress(0);
         } catch (err) {
             console.error(err);
+            // Handle authentication errors
+            if (err.response && err.response.status === 401) {
+                setError('You must be logged in to upload videos. Please login first.');
+                setTimeout(() => navigate('/login'), 2000);
+                return;
+            }
             // Show server-provided error details when available
             const serverDetail = err?.response?.data?.detail || err?.response?.data || null;
             if (err.response && err.response.status === 429) {
-                setError(serverDetail || 'Quota exceeded: please slow down.');
+                setError(serverDetail || 'Too many uploads. Please try again later.');
             } else if (err.response && serverDetail) {
                 setError(String(serverDetail));
             } else {
@@ -55,6 +70,13 @@ function Upload() {
     return (
         <div className="max-w-2xl mx-auto mt-10 p-8 bg-[var(--surface)] rounded-xl shadow-sm border border-[var(--border)]">
             <h2 className="text-3xl font-bold mb-6 text-[var(--text)] text-center">Upload Video</h2>
+
+            {!isLoggedIn && (
+                <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg flex items-center">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Please login to upload videos
+                </div>
+            )}
 
             {message && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
@@ -72,9 +94,8 @@ function Upload() {
 
             <form onSubmit={handleUpload} className="space-y-6">
 
-
                 <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Video File</label>
+                    <label className="block text-sm font-medium text-[var(--muted)] mb-2">Select Video File</label>
                     <div className="relative border-2 border-dashed border-[var(--border)] rounded-lg p-8 text-center hover:border-[var(--primary)] transition group cursor-pointer bg-gray-50">
                         <input
                             type="file"
@@ -94,7 +115,7 @@ function Upload() {
                                     <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
-                                    <span className="font-medium">Click to select</span> or drag and drop a video file
+                                    <span className="font-medium">Click to select</span> or drag and drop
                                 </div>
                             )}
                         </div>
@@ -127,8 +148,9 @@ function Upload() {
                 </button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-slate-700 text-center text-sm text-slate-500">
-                <p>Supported Formats: MP4, MKV, AVI, MOV (Auto-converted to MP4)</p>
+            <div className="mt-8 pt-6 border-t border-[var(--border)] text-center text-sm text-[var(--muted)]">
+                <p>Supported format: MP4 (max 200MB)</p>
+                <p className="mt-1 text-xs">Video title will be automatically set from filename</p>
             </div>
         </div>
     );
