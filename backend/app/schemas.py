@@ -44,6 +44,7 @@ class VideoResponse(VideoBase):
     hls_playlist_url: Optional[str]
     duration: Optional[int]
     resolution: Optional[str]
+    view_count: Optional[int] = 0
     created_at: datetime
     
     class Config:

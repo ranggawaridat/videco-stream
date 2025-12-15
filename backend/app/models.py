@@ -48,6 +48,7 @@ class Video(Base):
     duration = Column(Integer, nullable=True) # in seconds
     resolution = Column(String, nullable=True) # e.g. "720p"
     file_size = Column(Integer, nullable=True) # in bytes
+    view_count = Column(Integer, default=0) # track video views
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

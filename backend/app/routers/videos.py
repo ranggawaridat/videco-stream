@@ -35,6 +35,10 @@ def get_video(video_id: int, db: Session = Depends(database.get_db)):
     
     if video.thumbnail_url:
         video.thumbnail_url = bunny.generate_signed_url(video.thumbnail_url)
+    
+    # Increment view count
+    video.view_count += 1
+    db.commit()
         
     return video
 
@@ -145,3 +149,30 @@ async def upload_video(
             os.remove(temp_file_path)
 
     return new_video
+
+@router.delete("/{video_id}")
+async def delete_video(
+    video_id: int,
+    current_user: models.User = Depends(auth.get_current_admin_user),
+    db: Session = Depends(database.get_db)
+):
+    """Delete a video (admin only)"""
+    video = db.query(models.Video).filter(models.Video.id == video_id).first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    # Delete from Bunny CDN
+    try:
+        if video.storage_path:
+            bunny.delete_file(video.storage_path)
+        if video.thumbnail_url:
+            bunny.delete_file(video.thumbnail_url)
+    except Exception as e:
+        print(f"Failed to delete from Bunny CDN: {e}")
+        # Continue with database deletion even if CDN deletion fails
+    
+    # Delete from database
+    db.delete(video)
+    db.commit()
+    
+    return {"message": "Video deleted successfully"}

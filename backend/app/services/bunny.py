@@ -71,5 +71,23 @@ class BunnyService:
         signature = hashlib.sha256(to_sign.encode('utf-8')).hexdigest()
         
         return f"https://{self.pull_zone}{path}?token={signature}&expires={expires}"
+    
+    def delete_file(self, destination_path: str) -> bool:
+        """
+        Deletes a file from Bunny Storage.
+        """
+        url = f"{self.base_url}{destination_path}"
+        headers = {
+            "AccessKey": self.api_key
+        }
+        
+        try:
+            with httpx.Client() as client:
+                response = client.delete(url, headers=headers, timeout=30)
+                response.raise_for_status()
+                return True
+        except Exception as e:
+            print(f"Delete failed: {e}")
+            return False
 
 bunny = BunnyService()
