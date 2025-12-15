@@ -45,9 +45,7 @@ async def upload_video(
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(database.get_db)
 ):
-    # Security: Anti-Abuse Measures
-
-    # 1. Max File Size Limit (200MB)
+    # Security: Max File Size Limit (200MB)
     MAX_FILE_SIZE = 200 * 1024 * 1024  # 200MB
     file_size = 0
 
@@ -62,22 +60,9 @@ async def upload_video(
     if file_size and file_size > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 200MB.")
 
-    # 2. Spam Protection (Cooldown: 1 minute between uploads)
-    last_video = db.query(models.Video).filter(
-        models.Video.user_id == current_user.id
-    ).order_by(models.Video.created_at.desc()).first()
-
-    if last_video and last_video.created_at:
-        from datetime import datetime, timedelta, timezone
-        if datetime.now(timezone.utc) - last_video.created_at < timedelta(minutes=1):
-            raise HTTPException(status_code=429, detail="You are uploading too fast. Please wait a minute before uploading again.")
-
-    # 3. Save file temporarily
-    # Create temp file
-    # Sanitize original filename and extension
+    # Save file temporarily
     import re
     orig_name = os.path.basename(file.filename or "")
-    # Replace any unsafe characters
     safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", orig_name)[:200]
     file_ext = os.path.splitext(safe_name)[1] or ""
 
@@ -99,7 +84,7 @@ async def upload_video(
     except Exception:
         actual_size = None
 
-    # 4. Create Database Entry
+    # Create Database Entry
     new_video = models.Video(
         title=title,
         user_id=current_user.id,
@@ -110,54 +95,20 @@ async def upload_video(
     db.commit()
     db.refresh(new_video)
 
-    # 4. Upload to Bunny (Direct)
-    # 4. Upload to Bunny (Direct)
-    # 3. Process & Upload (Direct with Auto-Convert)
+    # Upload to Bunny CDN
     try:
         from ..services.transcoder import transcoder
         
-        # Determine strict file to upload
-        file_to_upload_path = temp_file_path
-        # Use a safer stored filename (by id). Avoid using raw client filenames for storage paths.
+        # Use video ID as filename for security
         final_filename = f"{new_video.id}{file_ext}"
-        
-        # If NOT MP4, Convert it synchronously (So it can be played)
-        file_ext_lower = file_ext.lower()
-        if file_ext_lower != ".mp4":
-            converted_filename = f"{new_video.id}.mp4"
-            converted_path = os.path.join(tempfile.gettempdir(), converted_filename)
-            try:
-                # Convert
-                transcoder.transcode_to_mp4(temp_file_path, converted_path)
-                # Swap file to upload
-                file_to_upload_path = converted_path
-                final_filename = f"{new_video.id}.mp4"
-            except Exception as e:
-                print(f"Conversion Failed: {e}")
-                # Fallback to original (will store but might not play)
-                pass
 
-        # A. Probe Metadata (from the file we are about to upload)
-        meta = transcoder.get_video_metadata(file_to_upload_path)
-        # If probing fails or no video stream is found, reject the upload as invalid
-        if not meta or not meta.get("duration"):
-            new_video.status = models.VideoStatus.FAILED
-            db.commit()
-            # cleanup and return error
-            if os.path.exists(temp_file_path):
-                os.remove(temp_file_path)
-            raise HTTPException(status_code=400, detail="Uploaded file is not a valid video or could not be processed.")
-
-        new_video.duration = int(meta["duration"])
-        new_video.resolution = meta["resolution"]
-
-        # B. Generate Thumbnail
+        # Generate Thumbnail (lightweight operation, kept for UI)
         thumb_filename = f"{new_video.id}_thumb.jpg"
         thumb_path = os.path.join(tempfile.gettempdir(), thumb_filename)
         
         # Try generate thumb, ignore if fails to not block upload
         try:
-            transcoder.generate_thumbnail(file_to_upload_path, thumb_path)
+            transcoder.generate_thumbnail(temp_file_path, thumb_path)
             # Upload Thumb
             bunny_thumb_path = f"thumbnails/{thumb_filename}"
             if bunny.upload_file(thumb_path, bunny_thumb_path):
@@ -165,12 +116,11 @@ async def upload_video(
         except Exception as e:
             print(f"Thumb Gen Error: {e}")
 
-        # C. Upload Video
-        # Use sanitized storage path (no user-controlled path segments)
+        # Upload Video directly without transcoding
         safe_storage_name = os.path.basename(final_filename)
         bunny_path = f"videos/{safe_storage_name}"
 
-        if bunny.upload_file(file_to_upload_path, bunny_path):
+        if bunny.upload_file(temp_file_path, bunny_path):
             new_video.storage_path = bunny_path
             new_video.status = models.VideoStatus.COMPLETED
             db.commit()
@@ -183,8 +133,6 @@ async def upload_video(
         # Cleanup Generated Files
         if os.path.exists(thumb_path):
             os.remove(thumb_path)
-        if file_to_upload_path != temp_file_path and os.path.exists(file_to_upload_path):
-            os.remove(file_to_upload_path)
 
     except Exception as e:
         new_video.status = models.VideoStatus.FAILED

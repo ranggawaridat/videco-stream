@@ -33,13 +33,15 @@ function VideoList() {
                         ) : (
                             <div className="flex items-center justify-center h-full text-gray-500">No Thumb</div>
                         )}
-                        <span className="absolute bottom-2 right-2 bg-black bg-opacity-75 px-1 rounded text-xs">
-                            {video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}` : ''}
-                        </span>
+                        {video.duration && (
+                            <span className="absolute bottom-2 right-2 bg-black bg-opacity-75 px-1 rounded text-xs">
+                                {`${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')}`}
+                            </span>
+                        )}
                     </div>
                     <div className="p-4">
                         <h3 className="font-semibold truncate text-[var(--text)]">{video.title}</h3>
-                        <p className="text-sm text-[var(--muted)]">{video.resolution}</p>
+                        {video.resolution && <p className="text-sm text-[var(--muted)]">{video.resolution}</p>}
                     </div>
                 </Link>
             ))}

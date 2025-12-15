@@ -194,20 +194,26 @@ function VideoPlayer() {
                 </div>
             </div>
 
-            {/* Metadata row */}
-            <div className="mt-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="text-sm text-[var(--muted)] flex items-center gap-2">
-                        <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span>{videoData.duration ? `${Math.floor(videoData.duration / 60)}:${(videoData.duration % 60).toString().padStart(2, '0')}` : '0:00'}</span>
+            {/* Metadata row - only show if data available */}
+            {(videoData.duration || videoData.resolution) && (
+                <div className="mt-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        {videoData.duration && (
+                            <div className="text-sm text-[var(--muted)] flex items-center gap-2">
+                                <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>{`${Math.floor(videoData.duration / 60)}:${(videoData.duration % 60).toString().padStart(2, '0')}`}</span>
+                            </div>
+                        )}
+                        {videoData.resolution && (
+                            <div className="text-sm text-[var(--muted)] px-2 py-0.5 rounded bg-gray-50 border border-[var(--border)]">{videoData.resolution}</div>
+                        )}
                     </div>
-                    <div className="text-sm text-[var(--muted)] px-2 py-0.5 rounded bg-gray-50 border border-[var(--border)]">{videoData.resolution || 'HD'}</div>
-                </div>
 
-                <div className="flex items-center gap-3">
-                    {/* reserved for future actions */}
+                    <div className="flex items-center gap-3">
+                        {/* reserved for future actions */}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Playback error */}
             {playbackError && (
