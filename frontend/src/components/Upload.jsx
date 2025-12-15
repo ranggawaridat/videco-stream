@@ -3,7 +3,6 @@ import api from '../api';
 
 function Upload() {
     const [file, setFile] = useState(null);
-    const [title, setTitle] = useState('');
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [message, setMessage] = useState('');
@@ -11,7 +10,7 @@ function Upload() {
 
     const handleUpload = async (e) => {
         e.preventDefault();
-        if (!file || !title) return;
+        if (!file) return;
 
         setUploading(true);
         setProgress(0);
@@ -21,9 +20,11 @@ function Upload() {
         const formData = new FormData();
         formData.append('file', file);
 
+        const derivedTitle = file.name.replace(/\.[^/.]+$/, "");
+
         try {
             await api.post('/videos/upload', formData, {
-                params: { title: title },
+                params: { title: derivedTitle },
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -33,7 +34,6 @@ function Upload() {
                 }
             });
             setMessage('Upload successful! Video is being processed in the background.');
-            setTitle('');
             setFile(null);
             setProgress(0);
         } catch (err) {
@@ -71,17 +71,7 @@ function Upload() {
             )}
 
             <form onSubmit={handleUpload} className="space-y-6">
-                <div>
-                    <label className="block text-sm font-medium text-[var(--muted)] mb-2">Video Title</label>
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        className="w-full p-3 bg-gray-50 border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent text-[var(--text)] placeholder-gray-400 transition"
-                        placeholder="Enter a descriptive title..."
-                        disabled={uploading}
-                    />
-                </div>
+
 
                 <div>
                     <label className="block text-sm font-medium text-slate-300 mb-2">Video File</label>
@@ -122,7 +112,7 @@ function Upload() {
                 )}
 
                 <button
-                    disabled={uploading || !file || !title}
+                    disabled={uploading || !file}
                     className="w-full bg-[var(--primary)] hover:bg-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 transform hover:scale-[1.02] shadow"
                 >
                     {uploading ? (
